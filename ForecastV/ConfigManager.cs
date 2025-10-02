@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Reflection;
 
 namespace ForecastV
@@ -6,7 +7,8 @@ namespace ForecastV
     public static class ConfigManager
     {
         private static readonly string configPath = Path.Combine(
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", "ForecastV.ini");
+            AppDomain.CurrentDomain.BaseDirectory, "ForecastV.ini");
+
 
         public static bool DeveloperOptions { get; private set; } = false;
         public static bool ShowNotifications { get; private set; } = true;
@@ -16,7 +18,6 @@ namespace ForecastV
 
         public static void Load()
         {
-            // If config file doesn't exist, create it with defaults
             if (!File.Exists(configPath))
             {
                 File.WriteAllLines(configPath, new[]
@@ -28,10 +29,9 @@ namespace ForecastV
                     $"Longitude={Longitude}",
                     $"UpdateIntervalMinutes={UpdateIntervalMinutes}"
                 });
-                return; // use defaults
+                return;
             }
 
-            // Read and parse existing config
             var lines = File.ReadAllLines(configPath);
             foreach (var line in lines)
             {
@@ -41,9 +41,11 @@ namespace ForecastV
                         DeveloperOptions = tmpDev;
                 }
                 else if (line.StartsWith("ShowNotifications="))
+                {
                     if (bool.TryParse(line.Substring("ShowNotifications=".Length), out bool tmpNot))
                         ShowNotifications = tmpNot;
-                    else if (line.StartsWith("Latitude="))
+                }
+                else if (line.StartsWith("Latitude="))
                 {
                     if (float.TryParse(line.Substring("Latitude=".Length), out float tmpLat))
                         Latitude = tmpLat;
