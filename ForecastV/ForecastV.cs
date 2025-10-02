@@ -15,6 +15,8 @@ namespace ForecastV
 {
     public class ForecastV : Script
     {
+        private float timeSinceLastUpdate = 0f;
+        private const float updateInterval = 300f;
         public ForecastV()
         {
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
@@ -23,9 +25,18 @@ namespace ForecastV
             KeyDown += OnKeyDown;
             KeyUp += OnKeyUp;
         }
-        public void OnTick(object sender, EventArgs e) { }
+        public async void OnTick(object sender, EventArgs e)
+        {
+            timeSinceLastUpdate += Game.LastFrameTime;
+
+            if (timeSinceLastUpdate >= updateInterval)
+            {
+                timeSinceLastUpdate = 0f;
+                await FetchAndApplyWeather(); // your async method
+            }
+        }
         public void OnKeyDown(object sender, KeyEventArgs e) { }
-        public void OnKeyUp(object sender, KeyEventArgs e)
+        public async void OnKeyUp(object sender, KeyEventArgs e)
         {
             switch (e.KeyCode)
             {
@@ -33,20 +44,28 @@ namespace ForecastV
                     Notification.Show(NotificationIcon.SocialClub, "ForecastV", "All Working", "The mod has sucessfully loaded", true, false);
                     break;
                 case Keys.O:
-                    FetchAndApplyWeather();
+                    await FetchAndApplyWeather();
                     break;
                 default:
                     break;
             }
         }
 
-        private async void FetchAndApplyWeather()
+        private async Task<bool> FetchAndApplyWeather()
         {
-            int code = await DataRetrieval.GetWeatherCodeAsync();
-            Weather gtaWeather = WeatherMapper.MapCodeToGtaWeather(code);
-
-            World.Weather = gtaWeather;
-            Notification.Show($"ForecastV: Applied {gtaWeather} (code {code})");
+            try
+            {
+                int code = await DataRetrieval.GetWeatherCodeAsync();
+                Weather gtaWeather = WeatherMapper.MapCodeToGtaWeather(code);
+                World.Weather = gtaWeather;
+                Notification.Show($"ForecastV: Applied {gtaWeather} (code {code})");
+            }
+            catch (Exception ex)
+            {
+                Notification.Show($"Error: {ex.Message}");
+                return false;
+            }
+            return true;
         }
     }
 }
