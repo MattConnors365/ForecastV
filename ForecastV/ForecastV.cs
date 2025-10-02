@@ -16,9 +16,10 @@ namespace ForecastV
     public class ForecastV : Script
     {
         private float timeSinceLastUpdate = 0f;
-        private const float updateInterval = 300f;
         public ForecastV()
         {
+            ConfigManager.Load();
+
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
             Tick += OnTick;
@@ -29,25 +30,28 @@ namespace ForecastV
         {
             timeSinceLastUpdate += Game.LastFrameTime;
 
-            if (timeSinceLastUpdate >= updateInterval)
+            if (timeSinceLastUpdate >= ConfigManager.UpdateIntervalMinutes * 60f)
             {
                 timeSinceLastUpdate = 0f;
-                await FetchAndApplyWeather(); // your async method
+                await FetchAndApplyWeather();
             }
         }
         public void OnKeyDown(object sender, KeyEventArgs e) { }
         public async void OnKeyUp(object sender, KeyEventArgs e)
         {
-            switch (e.KeyCode)
+            if (ConfigManager.DeveloperOptions)
             {
-                case Keys.L:
-                    Notification.Show(NotificationIcon.SocialClub, "ForecastV", "All Working", "The mod has sucessfully loaded", true, false);
-                    break;
-                case Keys.O:
-                    await FetchAndApplyWeather();
-                    break;
-                default:
-                    break;
+                switch (e.KeyCode)
+                {
+                    case Keys.L:
+                        Notification.Show(NotificationIcon.SocialClub, "ForecastV", "All Working", "The mod has sucessfully loaded", true, false);
+                        break;
+                    case Keys.O:
+                        await FetchAndApplyWeather();
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
@@ -55,10 +59,11 @@ namespace ForecastV
         {
             try
             {
-                int code = await DataRetrieval.GetWeatherCodeAsync();
+                int code = await DataRetrieval.GetWeatherCodeAsync(ConfigManager.Latitude, ConfigManager.Longitude);
                 Weather gtaWeather = WeatherMapper.MapCodeToGtaWeather(code);
                 World.Weather = gtaWeather;
-                Notification.Show($"ForecastV: Applied {gtaWeather} (code {code})");
+                if (ConfigManager.ShowNotifications) 
+                    Notification.Show($"ForecastV: Applied {gtaWeather} (code {code})");
             }
             catch (Exception ex)
             {

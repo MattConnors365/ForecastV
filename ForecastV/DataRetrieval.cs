@@ -10,9 +10,9 @@ namespace ForecastV
     public static class DataRetrieval
     {
         private static readonly HttpClient client = new HttpClient();
-        public static async Task<int> GetWeatherCodeAsync()
+        public static async Task<int> GetWeatherCodeAsync(float latitude, float longitude)
         {
-            string url = "https://api.open-meteo.com/v1/forecast?latitude=34.0983&longitude=-118.3267&current=temperature_2m,weather_code&timezone=auto";
+            string url = $"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current=temperature_2m,weather_code&timezone=auto";
 
             try
             {
