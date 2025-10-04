@@ -1,85 +1,156 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
+using System.Text;
 
 namespace ForecastV
 {
     /// <summary>
-    /// Handles loading, reading, and generating configuration values for ForecastV.
-    /// The configuration file (<c>ForecastV.ini</c>) is generated automatically on first run.
+    /// Represents all configurable settings for ForecastV.
+    /// </summary>
+    [DataContract]
+    public class ConfigData
+    {
+        /// <summary>Enables developer-only keybinds (manual weather refresh, debug notifications).</summary>
+        [DataMember] public bool DeveloperOptions { get; set; } = false;
+
+        /// <summary>Determines if in-game notifications appear when weather changes.</summary>
+        [DataMember] public bool ShowNotifications { get; set; } = true;
+
+        /// <summary>Latitude coordinate used for weather retrieval.</summary>
+        [DataMember] public float Latitude { get; set; } = 34.0983f;
+
+        /// <summary>Longitude coordinate used for weather retrieval.</summary>
+        [DataMember] public float Longitude { get; set; } = -118.3267f;
+
+        /// <summary>Number of minutes between automatic weather updates.</summary>
+        [DataMember] public int UpdateIntervalMinutes { get; set; } = 5;
+    }
+
+    /// <summary>
+    /// Handles loading, saving, and managing the ForecastV configuration file.
     /// </summary>
     public static class ConfigManager
     {
-        // Path to the configuration file in the GTA V scripts directory.
-        private static readonly string configPath = Path.Combine(
-            AppDomain.CurrentDomain.BaseDirectory, "ForecastV.ini");
+        /// <summary>Path to the configuration JSON file in the GTA V scripts directory.</summary>
+        private static readonly string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ForecastV.json");
 
-        /// <summary>Enables developer-only keybinds (manual weather refresh, debug notifications).</summary>
-        public static bool DeveloperOptions { get; private set; } = false;
+        private static ConfigData _config;
 
-        /// <summary>Determines if in-game notifications appear when weather changes.</summary>
-        public static bool ShowNotifications { get; private set; } = true;
-
-        /// <summary>Latitude coordinate used for weather retrieval.</summary>
-        public static float Latitude { get; private set; } = 34.0983f;
-
-        /// <summary>Longitude coordinate used for weather retrieval.</summary>
-        public static float Longitude { get; private set; } = -118.3267f;
-
-        /// <summary>Number of minutes between automatic weather updates.</summary>
-        public static int UpdateIntervalMinutes { get; private set; } = 5;
+        /// <summary>Provides access to the current configuration data.</summary>
+        public static ConfigData Config => _config;
 
         /// <summary>
-        /// Loads configuration from <c>ForecastV.ini</c>.  
-        /// If the file does not exist, creates one with default values.
+        /// Loads the configuration from disk.  
+        /// If the file is missing, creates it with default values.
         /// </summary>
         public static void Load()
         {
-            // Generate default configuration file if it doesn't exist.
-            if (!File.Exists(configPath))
+            if (File.Exists(configPath))
             {
-                File.WriteAllLines(configPath, new[]
+                using (var stream = File.OpenRead(configPath))
                 {
-                    "[Settings]",
-                    $"DeveloperOptions={DeveloperOptions}",
-                    $"ShowNotifications={ShowNotifications}",
-                    $"Latitude={Latitude}",
-                    $"Longitude={Longitude}",
-                    $"UpdateIntervalMinutes={UpdateIntervalMinutes}"
-                });
-                return;
+                    var serializer = new DataContractJsonSerializer(typeof(ConfigData));
+                    _config = (ConfigData)serializer.ReadObject(stream);
+                }
             }
+            else
+            {
+                _config = new ConfigData();
+                Save();
+            }
+        }
 
-            // Read and parse key-value pairs.
-            var lines = File.ReadAllLines(configPath);
-            foreach (var line in lines)
+        /// <summary>
+        /// Saves the current configuration to disk, formatted for readability.
+        /// </summary>
+        public static void Save()
+        {
+            using (var stream = new MemoryStream())
             {
-                if (line.StartsWith("DeveloperOptions="))
+                var serializer = new DataContractJsonSerializer(typeof(ConfigData));
+                serializer.WriteObject(stream, _config);
+
+                stream.Position = 0;
+                using (var reader = new StreamReader(stream))
                 {
-                    if (bool.TryParse(line.Substring("DeveloperOptions=".Length), out bool tmpDev))
-                        DeveloperOptions = tmpDev;
-                }
-                else if (line.StartsWith("ShowNotifications="))
-                {
-                    if (bool.TryParse(line.Substring("ShowNotifications=".Length), out bool tmpNot))
-                        ShowNotifications = tmpNot;
-                }
-                else if (line.StartsWith("Latitude="))
-                {
-                    if (float.TryParse(line.Substring("Latitude=".Length), out float tmpLat))
-                        Latitude = tmpLat;
-                }
-                else if (line.StartsWith("Longitude="))
-                {
-                    if (float.TryParse(line.Substring("Longitude=".Length), out float tmpLon))
-                        Longitude = tmpLon;
-                }
-                else if (line.StartsWith("UpdateIntervalMinutes="))
-                {
-                    if (int.TryParse(line.Substring("UpdateIntervalMinutes=".Length), out int tmpInt))
-                        UpdateIntervalMinutes = tmpInt;
+                    string json = reader.ReadToEnd();
+                    string indentedJson = PrettyPrintJson(json);
+                    File.WriteAllText(configPath, indentedJson);
                 }
             }
+        }
+
+        /// <summary>
+        /// Pretty-prints JSON text with indentation and new lines.
+        /// </summary>
+        /// <param name="json">Minified JSON string.</param>
+        /// <returns>Indented, human-readable JSON.</returns>
+        private static string PrettyPrintJson(string json)
+        {
+            const int spacesPerIndent = 4;
+            var indent = 0;
+            var quoted = false;
+            var sb = new StringBuilder();
+
+            foreach (var ch in json)
+            {
+                switch (ch)
+                {
+                    case '{':
+                    case '[':
+                        sb.Append(ch);
+                        if (!quoted)
+                        {
+                            sb.AppendLine();
+                            indent++;
+                            sb.Append(new string(' ', indent * spacesPerIndent));
+                        }
+                        break;
+                    case '}':
+                    case ']':
+                        if (!quoted)
+                        {
+                            sb.AppendLine();
+                            indent--;
+                            sb.Append(new string(' ', indent * spacesPerIndent));
+                        }
+                        sb.Append(ch);
+                        break;
+                    case '"':
+                        sb.Append(ch);
+                        bool escaped = sb.Length > 1 && sb[sb.Length - 2] == '\\';
+                        if (!escaped) quoted = !quoted;
+                        break;
+                    case ',':
+                        sb.Append(ch);
+                        if (!quoted)
+                        {
+                            sb.AppendLine();
+                            sb.Append(new string(' ', indent * spacesPerIndent));
+                        }
+                        break;
+                    case ':':
+                        sb.Append(ch);
+                        if (!quoted) sb.Append(' ');
+                        break;
+                    default:
+                        sb.Append(ch);
+                        break;
+                }
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Allows modifying configuration data and immediately saving it to disk.
+        /// </summary>
+        /// <param name="modify">Action that applies changes to the config object.</param>
+        public static void Set(Action<ConfigData> modify)
+        {
+            modify(_config);
+            Save();
         }
     }
 }

@@ -4,7 +4,7 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
+using static ForecastV.ConfigData;
 namespace ForecastV
 {
     /// <summary>
@@ -13,6 +13,7 @@ namespace ForecastV
     /// </summary>
     public class ForecastV : Script
     {
+        private ConfigData cfg;
         private float timeSinceLastUpdate = 0f;
 
         /// <summary>
@@ -22,6 +23,7 @@ namespace ForecastV
         public ForecastV()
         {
             ConfigManager.Load();
+            cfg = ConfigManager.Config;
 
             // Ensure modern TLS support.
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
@@ -41,7 +43,7 @@ namespace ForecastV
         {
             timeSinceLastUpdate += Game.LastFrameTime;
 
-            if (timeSinceLastUpdate >= ConfigManager.UpdateIntervalMinutes * 60f)
+            if (timeSinceLastUpdate >= cfg.UpdateIntervalMinutes * 60f)
             {
                 timeSinceLastUpdate = 0f;
                 await FetchAndApplyWeather();
@@ -55,7 +57,7 @@ namespace ForecastV
         /// </summary>
         public async void OnKeyUp(object sender, KeyEventArgs e)
         {
-            if (!ConfigManager.DeveloperOptions) return;
+            if (!cfg.DeveloperOptions) return;
 
             switch (e.KeyCode)
             {
@@ -76,11 +78,11 @@ namespace ForecastV
         {
             try
             {
-                int code = await DataRetrieval.GetWeatherCodeAsync(ConfigManager.Latitude, ConfigManager.Longitude);
+                int code = await DataRetrieval.GetWeatherCodeAsync(cfg.Latitude, cfg.Longitude);
                 Weather gtaWeather = WeatherMapper.MapCodeToGtaWeather(code);
                 World.Weather = gtaWeather;
 
-                if (ConfigManager.ShowNotifications)
+                if (cfg.ShowNotifications)
                     Notification.Show($"ForecastV: Applied {gtaWeather} (code {code})");
             }
             catch (Exception ex)
