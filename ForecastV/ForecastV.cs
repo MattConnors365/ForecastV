@@ -25,6 +25,8 @@ namespace ForecastV
             Tick += OnTick;
             KeyDown += OnKeyDown;
             KeyUp += OnKeyUp;
+
+            _ = FetchAndApplyWeather();
         }
         public async void OnTick(object sender, EventArgs e)
         {
