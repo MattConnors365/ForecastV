@@ -1,14 +1,15 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ForecastV
 {
+    /// <summary>
+    /// Contains model definitions for JSON responses returned by the Open-Meteo API.
+    /// </summary>
     public class Models
     {
+        /// <summary>
+        /// Represents current weather conditions in the API response.
+        /// </summary>
         public class CurrentWeather
         {
             [JsonProperty("time")]
@@ -21,6 +22,9 @@ namespace ForecastV
             public int WeatherCode { get; set; }
         }
 
+        /// <summary>
+        /// Root object returned by the Open-Meteo API.
+        /// </summary>
         public class WeatherResponse
         {
             [JsonProperty("current")]

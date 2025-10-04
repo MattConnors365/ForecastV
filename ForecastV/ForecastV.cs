@@ -1,33 +1,42 @@
 ﻿using GTA;
-using GTA.Math;
-using GTA.Native;
-using GTA.NaturalMotion;
 using GTA.UI;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ForecastV
 {
+    /// <summary>
+    /// Main script class controlling ForecastV runtime behavior.
+    /// Handles timed weather updates, developer keybinds, and notification display.
+    /// </summary>
     public class ForecastV : Script
     {
         private float timeSinceLastUpdate = 0f;
+
+        /// <summary>
+        /// Initializes the ForecastV script, loads configuration,
+        /// and starts periodic weather synchronization.
+        /// </summary>
         public ForecastV()
         {
             ConfigManager.Load();
 
+            // Ensure modern TLS support.
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
             Tick += OnTick;
             KeyDown += OnKeyDown;
             KeyUp += OnKeyUp;
 
+            // Immediately fetch weather once on game load.
             _ = FetchAndApplyWeather();
         }
+
+        /// <summary>
+        /// Triggered each game tick. Handles the update interval timer.
+        /// </summary>
         public async void OnTick(object sender, EventArgs e)
         {
             timeSinceLastUpdate += Game.LastFrameTime;
@@ -38,25 +47,31 @@ namespace ForecastV
                 await FetchAndApplyWeather();
             }
         }
+
         public void OnKeyDown(object sender, KeyEventArgs e) { }
+
+        /// <summary>
+        /// Handles key input when developer options are enabled.
+        /// </summary>
         public async void OnKeyUp(object sender, KeyEventArgs e)
         {
-            if (ConfigManager.DeveloperOptions)
+            if (!ConfigManager.DeveloperOptions) return;
+
+            switch (e.KeyCode)
             {
-                switch (e.KeyCode)
-                {
-                    case Keys.L:
-                        Notification.Show(NotificationIcon.SocialClub, "ForecastV", "All Working", "The mod has sucessfully loaded", true, false);
-                        break;
-                    case Keys.O:
-                        await FetchAndApplyWeather();
-                        break;
-                    default:
-                        break;
-                }
+                case Keys.L:
+                    Notification.Show(NotificationIcon.SocialClub, "ForecastV", "All Working",
+                        "The mod has successfully loaded", true, false);
+                    break;
+                case Keys.O:
+                    await FetchAndApplyWeather();
+                    break;
             }
         }
 
+        /// <summary>
+        /// Fetches the current weather from the API and applies it in-game.
+        /// </summary>
         private async Task<bool> FetchAndApplyWeather()
         {
             try
@@ -64,7 +79,8 @@ namespace ForecastV
                 int code = await DataRetrieval.GetWeatherCodeAsync(ConfigManager.Latitude, ConfigManager.Longitude);
                 Weather gtaWeather = WeatherMapper.MapCodeToGtaWeather(code);
                 World.Weather = gtaWeather;
-                if (ConfigManager.ShowNotifications) 
+
+                if (ConfigManager.ShowNotifications)
                     Notification.Show($"ForecastV: Applied {gtaWeather} (code {code})");
             }
             catch (Exception ex)
@@ -72,6 +88,7 @@ namespace ForecastV
                 Notification.Show($"Error: {ex.Message}");
                 return false;
             }
+
             return true;
         }
     }
