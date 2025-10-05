@@ -20,9 +20,9 @@ namespace ForecastV
         /// </summary>
         /// <param name="latitude">Latitude for the forecast location.</param>
         /// <param name="longitude">Longitude for the forecast location.</param>
-        public static async Task<int> GetWeatherCodeAsync(HttpClient client, float latitude, float longitude)
+        public static async Task<int> GetWeatherCodeAsync(HttpClient client, ConfigData cfg)
         {
-            string url = $"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current=temperature_2m,weather_code&timezone=auto";
+            string url = $"https://api.open-meteo.com/v1/forecast?latitude={cfg.Latitude}&longitude={cfg.Longitude}&current=temperature_2m,weather_code&timezone=auto";
 
             try
             {

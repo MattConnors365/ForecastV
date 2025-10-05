@@ -80,7 +80,7 @@ namespace ForecastV
         {
             try
             {
-                int code = await DataRetrieval.GetWeatherCodeAsync(client, cfg.Latitude, cfg.Longitude);
+                int code = await DataRetrieval.GetWeatherCodeAsync(client, cfg);
                 Weather gtaWeather = WeatherMapper.MapCodeToGtaWeather(code);
                 World.Weather = gtaWeather;
 
