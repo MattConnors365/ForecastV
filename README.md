@@ -19,11 +19,15 @@ ForecastV automatically fetches real-world weather for a specified location and 
 
 It supports configurable update intervals, notifications, and developer tools for debugging.
 
+(v1.0.1) Weather notifications now display the current temperature in Celsius, Fahrenheit, or Kelvin (configurable via TemperatureUnit in ForecastV.json).
+
+
 ---
 
 ## ⚙️ Configuration
 
 Configuration is stored in a human-readable JSON file: `scripts/ForecastV.json`
+
 Example:
 ```json
 {
@@ -31,9 +35,13 @@ Example:
     "ShowNotifications": true,
     "Latitude": 44.4375,
     "Longitude": 26.1250,
+    "TemperatureUnit": "c",
     "UpdateIntervalMinutes": 5
 }
 ```
+
+The mod automatically validates configuration values and resets invalid fields to their default values.
+
 ## Options
 
 - DeveloperOptions-(bool)-[false]: Enables developer keybinds.
@@ -43,6 +51,8 @@ Example:
 - Latitude-(float)-[34.0983]: Latitude of your desired location.
 
 - Longitude-(float)-[-118.3267]: Longitude of your desired location.
+
+- TemperatureUnit-(string)-[c]: The unit of temperature the mod will use, accepts: (c)elsius, (f)ahrenheit, (k)elvin.
 
 - UpdateIntervalMinutes-(int)-[5]: Minutes between automatic weather updates.
 
@@ -125,4 +135,4 @@ This project is licensed under the [MIT License](./LICENSE)
 
 Weather data © Open-Meteo and licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) license.
 
-Author: Matt Connors | Updated: October 4th, 2025
+Author: Matt Connors | Updated: October 5th, 2025
