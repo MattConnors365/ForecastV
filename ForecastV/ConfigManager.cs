@@ -26,6 +26,44 @@ namespace ForecastV
 
         /// <summary>Number of minutes between automatic weather updates.</summary>
         [DataMember] public int UpdateIntervalMinutes { get; set; } = 5;
+        /// <summary>The unit for displaying temperatures. Must be c/f/k.</summary>
+        [DataMember] public string TemperatureUnit { get; set; } = "c";
+
+        public void Validate()
+        {
+            // Validate Temperature
+            if (string.IsNullOrWhiteSpace(TemperatureUnit))
+            {
+                TemperatureUnit = "c";
+            }
+            else
+            {
+                string unit = TemperatureUnit.ToLower();
+                switch (unit)
+                {
+                    case "c":
+                    case "celsius":
+                        TemperatureUnit = "c";
+                        break;
+                    case "f":
+                    case "fahrenheit":
+                        TemperatureUnit = "f";
+                        break;
+                    case "k":
+                    case "kelvin":
+                        TemperatureUnit = "k";
+                        break;
+                    default:
+                        TemperatureUnit = "c";
+                        break;
+                }
+            }
+            // Validate Update Interval Minutes
+            if (UpdateIntervalMinutes < 0)
+            {
+                UpdateIntervalMinutes = 5;
+            }
+        }
     }
 
     /// <summary>
@@ -60,6 +98,10 @@ namespace ForecastV
                 _config = new ConfigData();
                 Save();
             }
+
+            // Validate and save back fixed data if needed
+            _config.Validate();
+            Save();
         }
 
         /// <summary>

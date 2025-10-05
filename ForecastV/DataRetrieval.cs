@@ -18,9 +18,9 @@ namespace ForecastV
         /// Retrieves the current weather code from the Open-Meteo API for the specified coordinates.
         /// Returns -1 on error.
         /// </summary>
-        /// <param name="latitude">Latitude for the forecast location.</param>
-        /// <param name="longitude">Longitude for the forecast location.</param>
-        public static async Task<int> GetWeatherCodeAsync(HttpClient client, ConfigData cfg)
+        /// <param name="client">The HTTP client</param>
+        /// <param name="cfg">User configurations</param>
+        public static async Task<Models.CurrentWeather> GetWeatherDataAsync(HttpClient client, ConfigData cfg)
         {
             string url = $"https://api.open-meteo.com/v1/forecast?latitude={cfg.Latitude}&longitude={cfg.Longitude}&current=temperature_2m,weather_code&timezone=auto";
 
@@ -33,14 +33,14 @@ namespace ForecastV
                 using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(json)))
                 {
                     var response = serializer.ReadObject(ms) as Models.WeatherResponse;
-                    return response?.Current?.WeatherCode ?? -1;
+                    return response?.Current;
                 }
             }
             catch (Exception ex)
             {
                 // Show a small notification so the user can see issues in-game (developer mode doesn't matter).
                 Notification.Show($"ForecastV JSON error: {ex.Message}");
-                return -1;
+                throw new Exception("An error appeared while trying to parse received JSON data.");
             }
         }
     }

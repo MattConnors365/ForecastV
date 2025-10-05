@@ -5,7 +5,8 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static ForecastV.ConfigData;
+using static ForecastV.Models.CurrentWeather;
+
 namespace ForecastV
 {
     /// <summary>
@@ -17,6 +18,7 @@ namespace ForecastV
         private ConfigData cfg;
         private static readonly HttpClient client = new HttpClient();
         private float timeSinceLastUpdate = 0f;
+        private static string TemperatureFormat;
 
         /// <summary>
         /// Initializes the ForecastV script, loads configuration,
@@ -34,6 +36,8 @@ namespace ForecastV
             KeyDown += OnKeyDown;
             KeyUp += OnKeyUp;
 
+            TemperatureFormat = cfg.TemperatureUnit == "c" || cfg.TemperatureUnit == "f" ?
+                $"°{cfg.TemperatureUnit.ToUpper()}" : $"{cfg.TemperatureUnit.ToUpper()}";
             // Immediately fetch weather once on game load.
             _ = FetchAndApplyWeather();
         }
@@ -80,12 +84,12 @@ namespace ForecastV
         {
             try
             {
-                int code = await DataRetrieval.GetWeatherCodeAsync(client, cfg);
-                Weather gtaWeather = WeatherMapper.MapCodeToGtaWeather(code);
+                Models.CurrentWeather weatherData = await DataRetrieval.GetWeatherDataAsync(client, cfg);
+                Weather gtaWeather = WeatherMapper.MapCodeToGtaWeather(weatherData.WeatherCode);
                 World.Weather = gtaWeather;
 
                 if (cfg.ShowNotifications)
-                    Notification.Show($"ForecastV: Applied {gtaWeather} (code {code})");
+                    Notification.Show(NotificationIcon.BlankEntry, "ForecastV", "Synced weather", $"{gtaWeather} (code {weatherData.WeatherCode}) {Utilities.ConvertCelsius(weatherData.Temperature, cfg.TemperatureUnit)}{TemperatureFormat}", true);
             }
             catch (Exception ex)
             {
