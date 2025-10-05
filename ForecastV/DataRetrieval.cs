@@ -14,15 +14,13 @@ namespace ForecastV
     /// </summary>
     public static class DataRetrieval
     {
-        private static readonly HttpClient client = new HttpClient();
-
         /// <summary>
         /// Retrieves the current weather code from the Open-Meteo API for the specified coordinates.
         /// Returns -1 on error.
         /// </summary>
         /// <param name="latitude">Latitude for the forecast location.</param>
         /// <param name="longitude">Longitude for the forecast location.</param>
-        public static async Task<int> GetWeatherCodeAsync(float latitude, float longitude)
+        public static async Task<int> GetWeatherCodeAsync(HttpClient client, float latitude, float longitude)
         {
             string url = $"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current=temperature_2m,weather_code&timezone=auto";
 

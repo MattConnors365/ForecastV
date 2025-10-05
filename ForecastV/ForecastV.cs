@@ -2,6 +2,7 @@
 using GTA.UI;
 using System;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using static ForecastV.ConfigData;
@@ -14,6 +15,7 @@ namespace ForecastV
     public class ForecastV : Script
     {
         private ConfigData cfg;
+        private static readonly HttpClient client = new HttpClient();
         private float timeSinceLastUpdate = 0f;
 
         /// <summary>
@@ -78,7 +80,7 @@ namespace ForecastV
         {
             try
             {
-                int code = await DataRetrieval.GetWeatherCodeAsync(cfg.Latitude, cfg.Longitude);
+                int code = await DataRetrieval.GetWeatherCodeAsync(client, cfg.Latitude, cfg.Longitude);
                 Weather gtaWeather = WeatherMapper.MapCodeToGtaWeather(code);
                 World.Weather = gtaWeather;
 
